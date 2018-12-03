@@ -56,16 +56,16 @@ Fraction 793 Correct: 0.5617866004962779
 		out_791[i,1] = x791[i,:ADMN_NICU]
 		out_791[i,2] = parse(Float64, apply_forest(model791, feat_791[i,:]))
 	end 
-	correct_f791 = 1 - (sum(out_791[:,1].!=out_791[:,2])/size(x791,1))
+	correct_m791 = 1 - (sum(out_791[:,1].!=out_791[:,2])/size(x791,1))
 
 	for i = 1:size(x793,1)
 		out_793[i,1] = x793[i,:ADMN_NICU]
 		out_793[i,2] = parse(Float64, apply_forest(model793, feat_793[i,:]))
 	end 
-	correct_f793 = 1 - (sum(abs.(out_793[:,1].!=out_793[:,2]))/size(x793,1))
+	correct_m793 = 1 - (sum(abs.(out_793[:,1].!=out_793[:,2]))/size(x793,1))
 
-println("Fraction 791 Correct (Partial Model): ", correct_f791)
-println("Fraction 793 Correct (Partial Model): ", correct_f793)
+println("Fraction 791 Correct (Partial Model): ", correct_m791)
+println("Fraction 793 Correct (Partial Model): ", correct_m793)
 
 
 
@@ -261,11 +261,26 @@ println("Fraction 793 Correct (Partial Model): ", correct_f793)
 
 	println(" ********* 791 **********")
 	println("fraction correct using partial model for 791: ", correct_p791)
-	println("fraction correct using full model for 791:    ", correct_f791)
+	println("fraction correct using full model for 791:    ", correct_full791)
 
 	println(" ********* 793 **********")
 	println("fraction correct using partial model for 793: ", correct_p793)
-	println("fraction correct using full model for 793:    ", correct_f793)
+	println("fraction correct using full model for 793:    ", correct_full793)
+
+
+#=
+RESULTS:
+
+OPTION 3: predicting with full model, including comparison to partial.
+ ********* 791 **********
+fraction correct using partial model for 791: 0.6410211575450253
+fraction correct using full model for 791:    0.6759923063472635
+ ********* 793 **********
+fraction correct using partial model for 793: 0.5617866004962779
+fraction correct using full model for 793:    0.6690818858560794
+
+=#
+
 
 
 
