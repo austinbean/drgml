@@ -19,6 +19,17 @@ sc_dat = DataFrame(load("/home/beanaus/datacsv/sc_merged.dta"))
 Running Option 0 - Predicting with MS DRG
 Fraction 791 Correct: 0.6410211575450253
 Fraction 793 Correct: 0.5617866004962779
+
+Using the model trained on a larger set (see bottom):
+RESULTS:
+
+OPTION 3: predicting with full model, including comparison to partial.
+ ********* 791 **********
+fraction correct using partial model for 791: 0.6410211575450253
+fraction correct using full model for 791:    0.6759923063472635
+ ********* 793 **********
+fraction correct using partial model for 793: 0.5617866004962779
+fraction correct using full model for 793:    0.6690818858560794
 =#  
 
 # Option 0 - use MSDRG
