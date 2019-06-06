@@ -1,5 +1,8 @@
 * NICU / ICD-9 Indicators.
-	* scp beanaus@hsrdcsub2.pmacs.upenn.edu:/project/Lorch_project2018/bean/nicu_collased_1pct.dta "/Users/austinbean/Desktop/"
+	* This needs to be redone - where does nicu_admits.dta come from?
+	* nicu_subset is in: /project/Lorch_project2018/bean/datacsv/datacsv
+	* scp "/Users/austinbean/Desktop/drgml/nicu_feature_matrix.do" beanaus@hsrdcsub2.pmacs.upenn.edu:/home/beanaus/dos
+
 	* NB: the file that this generates is ENORMOUS, > 40 Gb.
 
 
@@ -7,7 +10,7 @@
 	*global file_home "/Users/austinbean/Desktop/drgml/"
 	*global file_dest "/Users/austinbean/Desktop/drgml/"
 	
-	global file_home "/home/beanaus/datacsv/"
+	global file_home "/project/Lorch_project2018/bean/datacsv/datacsv/"
 	global file_dest "/secure/project/Lorch_project2018/bean/"
 	
 * For the regression at the bottom:
@@ -20,22 +23,18 @@ gen pid = _n
 
 * Preserve the original record ID and ADMN_NICU variable, which gets lost in collapse below
 	preserve
-	
-	keep pid RECORD_ID ADMN_NICU
-	
-	save "${file_home}nicu_admits.dta", replace
-	
+		keep pid RECORD_ID ADMN_NICU
+		save "${file_home}nicu_admits.dta", replace	
 	restore
 
 * Rename and reshape:
 	rename ADMITTING_DIAGNOSIS OTH_DIAG_CODE_25
-	
 	rename PRINC_DIAG_CODE OTH_DIAG_CODE_26
 	* From wide to long:
 	reshape long OTH_DIAG_CODE_, i(pid) j(ctt)
 	drop if OTH_DIAG_CODE_ == ""
-	bysort pid: gen dct = _n
-	drop ct
+	*bysort pid: gen dct = _n
+	*drop ct
 	rename OTH_DIAG_CODE DIAG_CODES
 
 * Validate ICD-9 Codes and drop those that don't work
@@ -59,35 +58,39 @@ gen pid = _n
 	restore
 	drop if code_count <=  `thresh'
 	drop code_count
-	
-* drop those only associated with one outcome:
-	sort DIAG_CODES ADMN_NICU
-	bysort DIAG_CODES ADMN_NICU: gen na_ct = _n
-	bysort DIAG_CODES ADMN_NICU: egen code_count = max(na_ct)
-	drop na_ct
-	unique code_count, by(DIAG_CODES) gen(ad_ct)
-	bysort DIAG_CODES: egen outcomes = max(ad_ct)
-	* Save codes which are associated with one outcome (i.e., either with only admissions or only non-admissions)
-	preserve
-	keep if outcomes == 1
-	keep DIAG_CODES
-	duplicates drop DIAG_CODES, force
-	icd9 generate diag_name = DIAG_CODES, description
-	save "${file_home}nicu_single_outcome_codes.dta", replace
-	restore 
-	drop if outcomes == 1
-	drop code_count outcomes ad_ct
 
-* drop people with no codes
-	* not clear that there can be such people but just in case.
-	sort pid
-	bysort pid: gen cdct = _n
-	bysort pid: egen cd_ct = max(cdct)
-	drop cdct
-	* In fact no people are dropped here
-	drop if cd_ct == 0
-	drop cd_ct
-	
+																				/*
+																				* this is not desirable
+																				* drop those only associated with one outcome:
+																					sort DIAG_CODES ADMN_NICU
+																					bysort DIAG_CODES ADMN_NICU: gen na_ct = _n
+																					bysort DIAG_CODES ADMN_NICU: egen code_count = max(na_ct)
+																					drop na_ct
+																					unique code_count, by(DIAG_CODES) gen(ad_ct)
+																					bysort DIAG_CODES: egen outcomes = max(ad_ct)
+																					* Save codes which are associated with one outcome (i.e., either with only admissions or only non-admissions)
+																					preserve
+																					keep if outcomes == 1
+																					keep DIAG_CODES
+																					duplicates drop DIAG_CODES, force
+																					icd9 generate diag_name = DIAG_CODES, description
+																					save "${file_home}nicu_single_outcome_codes.dta", replace
+																					restore 
+																					drop if outcomes == 1
+																					drop code_count outcomes ad_ct
+																				*/
+																				* drop people with no codes
+																				/*
+																					* not clear that there can be such people but just in case.
+																						sort pid
+																						bysort pid: gen cdct = _n
+																						bysort pid: egen cd_ct = max(cdct)
+																						drop cdct
+																							* In fact no people are dropped here
+																						drop if cd_ct == 0
+																						drop cd_ct
+																				*/
+		
 * drop repeated codes within a person
 	sort pid DIAG_CODES
 	bysort pid DIAG_CODES: gen pct_ct = _n
@@ -99,9 +102,9 @@ gen pid = _n
 	sort DIAG_CODES
 	levelsof DIAG_CODES, local(icds)
 	
-foreach cd of local icds{
-	gen byte ind_`cd' = 0
-	replace ind_`cd' = 1 if DIAG_CODES == "`cd'"
+foreach cd1 of local icds{
+	gen byte ind_`cd1' = 0
+	replace ind_`cd1' = 1 if DIAG_CODES == "`cd1'"
 }
 
 * Save an intermediate output here because that process takes SO long.
@@ -109,16 +112,13 @@ foreach cd of local icds{
 	save "${file_dest}nicu_features.dta",replace
 
 * Create one row per record
-
 	collapse (sum) ind_*, by(pid) fast
-	save "${file_dest}nicu_collapsed.dta",replace
+	recast byte ind_*
+	*save "${file_dest}nicu_collapsed.dta",replace
 
 * Add the ADMN_NICU and RECORD_ID vars back in
 	merge 1:1 pid using "${file_home}nicu_admits.dta"
 	drop if _merge != 3
-	
-* save version with predicted prob
 	save "${file_dest}nicu_collapsed.dta", replace
-
 
 
