@@ -6,7 +6,6 @@ library(dplyr)
 
 # constant parameter
 tree_num = 300
-home = FALSE
 
 # forest combining function
 source("/project/Lorch_project2018/bean/forest_combiner.R")
@@ -14,61 +13,77 @@ source("/project/Lorch_project2018/bean/forest_combiner.R")
 train_d = read.csv("/project/Lorch_project2018/bean/sc_nicu_train.csv")
 test_d = read.csv("/project/Lorch_project2018/bean/sc_nicu_test.csv")
 
+# what should I do... can't sort and separate out.
+# Just take half of each for each thing.
+
 
 # maybe this column is just missing and it should be admn_nicu
-train_d_ad <- train_d[train_d$admn_nicu == 1, ]
-print("DIMENSIONS w/ ADMN_NICU == 1")
-print(dim(train_d_ad))
-train_d_na <- train_d[train_d$admn_nicu == 0, ]
-print("DIMENSIONS w/ ADMN_NICU == 0")
-print(dim(train_d_na))
-# select half of the admitted patients
-train_d2 <- sample_n(train_d_na, floor((nrow(train_d_na)/2)))
+  # select the admitted patients.
+      train_d_ad <- train_d[train_d$admn_nicu == 1, ]
+    # number of rows
+      rows_t1 = dim(train_d_ad)[1]
+      midpoint_t1 = floor(rows_t1/2)
+    # create two halves of admitted patients
+      train_d_ad_1 = train_d_ad[1:midpoint_t1,]
+      train_d_ad_2 = train_d_ad[(midpoint_t1+1):rows_t1,]
 
-# new, smaller dataframe
-train_d <- rbind(train_d2, train_d_ad)
 
+    # select half the unadmitted patients
+      train_d_na <- train_d[train_d$admn_nicu == 0, ]
+    # number of rows
+      rows_t2 = dim(train_d_na)[1]
+      midpoint_t2 = floor(rows_t2/2)
+    # two halves of not admitted patients
+      train_d_na_1 = train_d_na[1:midpoint_t2,]
+      train_d_na_2 = train_d_na[(midpoint_t2+1):rows_t2,]
+      
+# combine them earlier...
+      train_1 <- rbind(train_d_ad_1, train_d_na_1)
+      train_2 <- rbind(train_d_ad_2, train_d_na_2)
+
+# add column.  Stupid
+      train_1$lab1 <-rep(1, nrow(train_1)) 
+      train_2$lab1 <-rep(2, nrow(train_2)) 
+      test_d$lab1 <-rep(3, nrow(test_d)) 
+
+# r bind the list of all four of them:
+      new_df <- bind_rows(train_1, train_2, test_d)
+
+# reselect out:
+      train_1 <- new_df[new_df$lab1 == 1, ]
+      train_2 <- new_df[new_df$lab1 == 2, ]
+      test_d <- new_df[new_df$lab1 == 3, ]
+      
 # rename
-colnames(train_d) <- toupper(colnames(train_d))
+colnames(train_1) <- toupper(colnames(train_1))
+colnames(train_2) <- toupper(colnames(train_2))
 colnames(test_d) <- toupper(colnames(test_d))
 
-# add cols:
-train_d$ISTRAIN <- rep(1, nrow(train_d))
-test_d$ISTRAIN <- rep(0, nrow(test_d))
-
-# rbind - stupid.
-complete_d <- rbind(train_d, test_d)
-
 # convert numeric variables to factors
-complete_d <- mutate_if(complete_d, is.numeric, as.factor)
-# check: is.factor(complete_d$ADMN_NICU)
+train_1 <- mutate_if(train_1, is.numeric, as.factor)
+train_2 <- mutate_if(train_2, is.numeric, as.factor)
+test_d <- mutate_if(test_d, is.numeric, as.factor)
 
 # dump row number and Record ID
-complete_d$PID <- NULL
-complete_d$RECORD_ID <- NULL
+train_1$PID <- NULL
+train_1$RECORD_ID <- NULL
+train_1$LAB1 <- NULL
 
-# recreate new data sets - split bound versions
-train_new <- complete_d[complete_d$ISTRAIN==1,]
-test_new <- complete_d[complete_d$ISTRAIN==0,]
-# drop tag
-train_new$ISTRAIN <- NULL
-test_new$ISTRAIN<- NULL
+train_2$PID <- NULL
+train_2$RECORD_ID <- NULL
+train_2$LAB1 <- NULL
 
-# Actual data too long to use Ccall / Fortran w/ RandomForest.  
-len1 = dim(train_new)[2]
-midpoint_train = floor(dim(train_new)[2]/2)
-
-# allocate a new datafram with a random sample, b/c this one is sorted now.
-
-
+test_d$PID <- NULL
+test_d$RECORD_ID <- NULL
+test_d$LAB1 <- NULL
 
 forest_tst1 <- randomForest(ADMN_NICU~ .,
-                            data=train_new[1:midpoint_train,],
+                            data=train_1,
                             ntree = tree_num,
                             do.trace=TRUE,
                             importance=TRUE)
 forest_tst2 <- randomForest(ADMN_NICU~ .,
-                            data=train_new[(midpoint_train+1):len1,],
+                            data=train_2,
                             ntree = tree_num,
                             do.trace=TRUE,
                             importance=TRUE)
@@ -80,10 +95,10 @@ library(randomForest)
 forest_tst <- forest_combine(forest_tst1, forest_tst2)
 
 res <-predict(forest_tst, 
-              test_new,
+              test_d,
               type="response")
 
-sum(res!=test_new$admn_nicu)/length(res)
+sum(res!=test_d$ADMN_NICU)/length(res)
 
 
 imp_vals <- importance(forest_tst)
