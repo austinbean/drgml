@@ -5,7 +5,7 @@ library(dplyr)
 
 
 # constant parameter
-tree_num = 300
+tree_num = 3
 
 # forest combining function
 source("/project/Lorch_project2018/bean/forest_combiner.R")
@@ -82,6 +82,7 @@ forest_tst1 <- randomForest(ADMN_NICU~ .,
                             ntree = tree_num,
                             do.trace=TRUE,
                             importance=TRUE)
+
 forest_tst2 <- randomForest(ADMN_NICU~ .,
                             data=train_2,
                             ntree = tree_num,

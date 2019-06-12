@@ -26,15 +26,21 @@
   for (i in 1:nrow(alld)){
     if (alld[i, "r_v"] <= 0.6) {
       alld[i,"r_v"] = 1
-    } 
+    }
+    # check if this is short-circuit and
     else if ((alld[i, "r_v"] > 0.6)&&(alld[i, "r_v"] <= 0.9)){
       alld[i,"r_v"] = 2
     }
     else{
       alld[i, "r_v"] = 3
     }
+    if (i%%10000 == 0) {
+      print(i)
+    }
   }
-  
+
+#do summary(alld) here to figure out what is wrong with the indicators?
+
 # subset out: 
   
   traind <- alld[alld$r_v == 1,]
@@ -42,14 +48,17 @@
   testd <- alld[alld$r_v == 3,]
   
 # remove r_v, set
+  traind$pid <- NULL
   traind$r_v <- NULL
   traind$set <- NULL
   traind$RECORD_ID <- NULL
   
+  vald$pid <- NULL
   vald$r_v <- NULL
-  vald$r_v <- NULL
+  vald$set <- NULL
   vald$RECORD_ID <- NULL
   
+  testd$pid <- NULL
   testd$r_v <- NULL
   testd$set <- NULL
   testd$RECORD_ID <- NULL
@@ -70,12 +79,14 @@
                               data=traind1,
                               ntree = tree_num,
                               do.trace=TRUE,
+                              na.action=na.omit,
                               importance=TRUE)
   
   forest_tst2 <- randomForest(ADMN_NICU~ .,
                               data=traind2,
                               ntree = tree_num,
                               do.trace=TRUE,
+                              na.action=na.omit,
                               importance=TRUE)
   
 # combine them:
@@ -104,12 +115,12 @@
   new_df <- bind_rows(traind1, tx99, tx00, tx01, tx02, tx03)
   
   # resub out
-  traind1 <- new_df[new_df$lab1 == 0]
-  tx99 <- new_df[new_df$lab1 == 1]
-  tx00 <- new_df[new_df$lab1 == 2]
-  tx01 <- new_df[new_df$lab1 == 3]
-  tx02 <- new_df[new_df$lab1 == 4]
-  tx03 <- new_df[new_df$lab1 == 5]
+  traind1 <- new_df[new_df$lab1 == 0,]
+  tx99 <- new_df[new_df$lab1 == 1,]
+  tx00 <- new_df[new_df$lab1 == 2,]
+  tx01 <- new_df[new_df$lab1 == 3,]
+  tx02 <- new_df[new_df$lab1 == 4,]
+  tx03 <- new_df[new_df$lab1 == 5,]
   
 # predic admission in previous years...
     # no way that this will work but figure out why...
