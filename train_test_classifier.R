@@ -7,7 +7,7 @@ library(dplyr)
 # useful discussion from the creators: https://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm
 
 # constant parameter
-    tree_num = 300
+    tree_num = 3
     home = FALSE
 
 # source the forest-combining function
@@ -103,11 +103,16 @@ library(dplyr)
 # apply to test data:
 # factor variables have different levels..
 # https://stackoverflow.com/questions/17059432/random-forest-package-in-r-shows-error-during-prediction-if-there-are-new-fact
-    res <-predict(forest_tst, 
+    res <-predict(forest_tst1, 
                   test_d,
                   type="response")
-    
+#This does work, which is weird...
     sum(res!=test_d$ADMN_NICU)/length(res)
+    
+out_res <- (res!=test_d$ADMN_NICU)   
+typeof(out_res)    
+
+test_d$predictions <- res    
 
 # Importance Measures
 # scp beanaus@hsrdcsub2.pmacs.upenn.edu:/project/Lorch_project2018/bean/var_imp.csv "/Users/austinbean/Desktop/drgml/"
