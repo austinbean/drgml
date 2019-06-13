@@ -6,7 +6,7 @@
   library(dplyr)
 
 # Constants
-  tree_num = 6
+  tree_num = 60
   # forest combining function
   source("/project/Lorch_project2018/bean/forest_combiner.R")
   
@@ -127,33 +127,38 @@
   res99 <-predict(forest_tst, 
                 tx99,
                 type="response")
-  tx99 <- cbind(tx99, res99)
+  res99$pred_results <- res99
+  res99$num_pred <- as.numeric(levels(res99))[res99]
   write.csv(tx99, file="/project/Lorch_project2018/bean/tx99.csv")
   
   res00 <-predict(forest_tst, 
                   tx00,
                   type="response")
-  tx00 <- cbind(tx00, res00)
+  res00$pred_results <- res00
+  res00$num_pred <- as.numeric(levels(res00))[res00]
   write.csv(tx00, file="/project/Lorch_project2018/bean/tx00.csv")
   
   res01 <-predict(forest_tst, 
                   tx01,
                   type="response")
-  tx01 <- cbind(tx01, res01)
+  res01$pred_results <- res01
+  res01$num_pred <- as.numeric(levels(res01))[res01]
   write.csv(tx01, file="/project/Lorch_project2018/bean/tx01.csv")
   
   
   res02 <-predict(forest_tst, 
                   tx02,
                   type="response")
-  tx02 <- cbind(tx02, res02)
+  res02$pred_results <- res02
+  res02$num_pred <- as.numeric(levels(res02))[res02]
   write.csv(tx02, file="/project/Lorch_project2018/bean/tx02.csv")
   
   
   res03 <-predict(forest_tst, 
                   tx03,
                   type="response")
-  tx03 <- cbind(tx03, res03)
+  res03$pred_results <- res03
+  res03$num_pred <- as.numeric(levels(res03))[res03]
   write.csv(tx03, file="/project/Lorch_project2018/bean/tx03.csv")
   
   
