@@ -1,12 +1,16 @@
 # TX classifier on more data...
 # scp  "/Users/austinbean/Desktop/drgml/TX_nicu_class.R" beanaus@hsrdcsub2.pmacs.upenn.edu:/project/Lorch_project2018/bean/
-  
+# bsub < r_tx_class.sh -m pellaeon
+
+# TODO - could split this into three pieces... split data in half, open and train on half, the other, etc.
+
 # another version. 
   library(randomForest)
   library(dplyr)
 
 # Constants
-  tree_num = 60
+  tree_num = 1
+  set.seed(26)
   # forest combining function
   source("/project/Lorch_project2018/bean/forest_combiner.R")
   
@@ -80,6 +84,8 @@
                               ntree = tree_num,
                               do.trace=TRUE,
                               na.action=na.omit,
+                              proximity=FALSE,
+                              nodesize=100,
                               importance=TRUE)
   
   forest_tst2 <- randomForest(ADMN_NICU~ .,
@@ -87,6 +93,8 @@
                               ntree = tree_num,
                               do.trace=TRUE,
                               na.action=na.omit,
+                              proximity=FALSE,
+                              nodesize=100,
                               importance=TRUE)
   
 # combine them:
@@ -127,40 +135,55 @@
   res99 <-predict(forest_tst, 
                 tx99,
                 type="response")
-  res99$pred_results <- res99
-  res99$num_pred <- as.numeric(levels(res99))[res99]
+  cbind(res99, n_labs = res99  )
+  #res99$num_pred <- as.numeric(levels(res99))[res99]
   write.csv(tx99, file="/project/Lorch_project2018/bean/tx99.csv")
   
   res00 <-predict(forest_tst, 
                   tx00,
                   type="response")
-  res00$pred_results <- res00
-  res00$num_pred <- as.numeric(levels(res00))[res00]
+  cbind(res00, pred_results = res00)
+  #res00$num_pred <- as.numeric(levels(res00))[res00]
   write.csv(tx00, file="/project/Lorch_project2018/bean/tx00.csv")
   
   res01 <-predict(forest_tst, 
                   tx01,
                   type="response")
-  res01$pred_results <- res01
-  res01$num_pred <- as.numeric(levels(res01))[res01]
+  cbind(res01, pred_results = res01)
+  #res01$num_pred <- as.numeric(levels(res01))[res01]
   write.csv(tx01, file="/project/Lorch_project2018/bean/tx01.csv")
   
   
   res02 <-predict(forest_tst, 
                   tx02,
                   type="response")
-  res02$pred_results <- res02
-  res02$num_pred <- as.numeric(levels(res02))[res02]
+  cbind(res02, pred_results = res02)
+  #res02$num_pred <- as.numeric(levels(res02))[res02]
   write.csv(tx02, file="/project/Lorch_project2018/bean/tx02.csv")
   
   
   res03 <-predict(forest_tst, 
                   tx03,
                   type="response")
-  res03$pred_results <- res03
-  res03$num_pred <- as.numeric(levels(res03))[res03]
+  cbind(res03, pred_results = res03)
+  #res03$num_pred <- as.numeric(levels(res03))[res03]
   write.csv(tx03, file="/project/Lorch_project2018/bean/tx03.csv")
   
   
+# write out subsets only
+  new99 <- subset(res99, select=c("pid", "res99"))
+  write.csv(new99, file="/project/Lorch_project2018/bean/tx99small.csv")
+  
+  new00 <- subset(res00, select=c("pid", "res00"))
+  write.csv(new00, file="/project/Lorch_project2018/bean/tx00small.csv")
+  
+  new01 <- subset(res01, select=c("pid", "res01"))
+  write.csv(new01, file="/project/Lorch_project2018/bean/tx01small.csv")
+  
+  new02 <- subset(res02, select=c("pid", "res02"))
+  write.csv(new02, file="/project/Lorch_project2018/bean/tx02small.csv")
+  
+  new03 <- subset(res03, select=c("pid", "res03"))
+  write.csv(new03, file="/project/Lorch_project2018/bean/tx03small.csv")
   
   
