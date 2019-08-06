@@ -1,6 +1,8 @@
 # TX 1 - run the classifier on half the TX data.
 # scp  "/Users/austinbean/Desktop/drgml/tx_half_forest.R" beanaus@hsrdcsub2.pmacs.upenn.edu:/project/Lorch_project2018/bean/
 # bsub < r_tx_class.sh -m pellaeon
+# scp beanaus@hsrdcsub2.pmacs.upenn.edu:/project/Lorch_project2018/bean/tx_d1.csv  "/Users/tuk39938/Desktop/programs/drgml" 
+# scp beanaus@hsrdcsub2.pmacs.upenn.edu:/project/Lorch_project2018/bean/1999_featurematrix.csv beanaus@hsrdcsub2.pmacs.upenn.edu:/project/Lorch_project2018/bean/2000_featurematrix.csv beanaus@hsrdcsub2.pmacs.upenn.edu:/project/Lorch_project2018/bean/2001_featurematrix.csv beanaus@hsrdcsub2.pmacs.upenn.edu:/project/Lorch_project2018/bean/2002_featurematrix.csv beanaus@hsrdcsub2.pmacs.upenn.edu:/project/Lorch_project2018/bean/2003_featurematrix.csv  "/Users/tuk39938/Desktop/programs/drgml" 
 
 # RELABEL OUTPUT BELOW LINE 70 FOR SECOND HALF
 
@@ -13,9 +15,11 @@ library(dplyr)
 tree_num = 1
 set.seed(26)
 # forest combining function
-source("/project/Lorch_project2018/bean/forest_combiner.R")
+# Path local: /Users/tuk39938/Desktop/programs/drgml⁩/
+# Path remote: 
+source("/Users/tuk39938/Desktop/programs/drgml/forest_combiner.R")
 
-alld = read.csv("/project/Lorch_project2018/bean/tx_d1.csv")
+alld = read.csv("/Users/tuk39938/Desktop/programs/drgml/tx_d1.csv")
 
 # set to factor vars:
 alld <- mutate_if(alld, is.numeric, as.factor)
@@ -37,9 +41,9 @@ for (i in 1:nrow(alld)){
   else{
     alld[i, "r_v"] = 3
   }
-  if (i%%10000 == 0) {
-    print(i)
-  }
+  # if (i%%10000 == 0) {
+  #   print(i)
+  # }
 }
 
 #do summary(alld) here to figure out what is wrong with the indicators?
@@ -72,7 +76,7 @@ colnames(vald) <- toupper(colnames(vald))
 colnames(testd) <- toupper(colnames(testd))
 
 # sources a file which splits data into two and estimates two forests
-source("/project/Lorch_project2018/bean/split_run_forest.R")
+source("/Users/tuk39938/Desktop/programs/drgml/split_run_forest.R")
   # output is one combined forest from the half-data
 
 
@@ -80,11 +84,11 @@ source("/project/Lorch_project2018/bean/split_run_forest.R")
 
 
 # now predict admission in new data from 1999 - 2003:
-tx99 <- read.csv("/project/Lorch_project2018/bean/1999_featurematrix.csv")
-tx00 <- read.csv("/project/Lorch_project2018/bean/2000_featurematrix.csv")
-tx01 <- read.csv("/project/Lorch_project2018/bean/2001_featurematrix.csv")
-tx02 <- read.csv("/project/Lorch_project2018/bean/2002_featurematrix.csv")
-tx03 <- read.csv("/project/Lorch_project2018/bean/2003_featurematrix.csv")
+tx99 <- read.csv("/Users/tuk39938/Desktop/programs/drgml/1999_featurematrix.csv")
+tx00 <- read.csv("/Users/tuk39938/Desktop/programs/drgml/2000_featurematrix.csv")
+tx01 <- read.csv("/Users/tuk39938/Desktop/programs/drgml/2001_featurematrix.csv")
+tx02 <- read.csv("/Users/tuk39938/Desktop/programs/drgml/2002_featurematrix.csv")
+tx03 <- read.csv("/Users/tuk39938/Desktop/programs/drgml/2003_featurematrix.csv")
 
 # predict admission...
 # will need to "rbind" all of these stupid things
@@ -114,21 +118,21 @@ res99 <-predict(forest_tst,
                 type="response")
 cbind(res99, n_labs = res99  )
 #res99$num_pred <- as.numeric(levels(res99))[res99]
-write.csv(tx99, file="/project/Lorch_project2018/bean/tx99.csv")
+write.csv(tx99, file="/Users/tuk39938/Desktop/programs/drgml/tx99.csv")
 
 res00 <-predict(forest_tst, 
                 tx00,
                 type="response")
 cbind(res00, pred_results = res00)
 #res00$num_pred <- as.numeric(levels(res00))[res00]
-write.csv(tx00, file="/project/Lorch_project2018/bean/tx00.csv")
+write.csv(tx00, file="/Users/tuk39938/Desktop/programs/drgml/tx00.csv")
 
 res01 <-predict(forest_tst, 
                 tx01,
                 type="response")
 cbind(res01, pred_results = res01)
 #res01$num_pred <- as.numeric(levels(res01))[res01]
-write.csv(tx01, file="/project/Lorch_project2018/bean/tx01.csv")
+write.csv(tx01, file="/Users/tuk39938/Desktop/programs/drgml/tx01.csv")
 
 
 res02 <-predict(forest_tst, 
@@ -136,7 +140,7 @@ res02 <-predict(forest_tst,
                 type="response")
 cbind(res02, pred_results = res02)
 #res02$num_pred <- as.numeric(levels(res02))[res02]
-write.csv(tx02, file="/project/Lorch_project2018/bean/tx02.csv")
+write.csv(tx02, file="/Users/tuk39938/Desktop/programs/drgml/tx02.csv")
 
 
 res03 <-predict(forest_tst, 
@@ -144,20 +148,20 @@ res03 <-predict(forest_tst,
                 type="response")
 cbind(res03, pred_results = res03)
 #res03$num_pred <- as.numeric(levels(res03))[res03]
-write.csv(tx03, file="/project/Lorch_project2018/bean/tx03.csv")
+write.csv(tx03, file="/Users/tuk39938/Desktop/programs/drgml/tx03.csv")
 
 # write out subsets only
 new99 <- subset(res99, select=c("pid", "res99"))
-write.csv(new99, file="/project/Lorch_project2018/bean/tx99small.csv")
+write.csv(new99, file="/Users/tuk39938/Desktop/programs/drgml/tx99small.csv")
 
 new00 <- subset(res00, select=c("pid", "res00"))
-write.csv(new00, file="/project/Lorch_project2018/bean/tx00small.csv")
+write.csv(new00, file="/Users/tuk39938/Desktop/programs/drgml/tx00small.csv")
 
 new01 <- subset(res01, select=c("pid", "res01"))
-write.csv(new01, file="/project/Lorch_project2018/bean/tx01small.csv")
+write.csv(new01, file="/Users/tuk39938/Desktop/programs/drgml/tx01small.csv")
 
 new02 <- subset(res02, select=c("pid", "res02"))
-write.csv(new02, file="/project/Lorch_project2018/bean/tx02small.csv")
+write.csv(new02, file="/Users/tuk39938/Desktop/programs/drgml/tx02small.csv")
 
 new03 <- subset(res03, select=c("pid", "res03"))
-write.csv(new03, file="/project/Lorch_project2018/bean/tx03small.csv")
+write.csv(new03, file="/Users/tuk39938/Desktop/programs/drgml/tx03small.csv")
