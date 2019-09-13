@@ -120,6 +120,11 @@ labelsc= ["385/789 Neonates died or transferred",
 		replace np_pdiff_50 = 1 if TOTAL_CHARGES > 1.50*quarter_avg_charges | nicu_prediction == 1
 		replace np_pdiff_75 = 1 if TOTAL_CHARGES > 1.75*quarter_avg_charges | nicu_prediction == 1
 		replace np_pdiff_100 = 1 if TOTAL_CHARGES > 2.00*quarter_avg_charges | nicu_prediction == 1
+		* MSE's 
+		egen mse_np_pdiff_25 = sum(abs(ADMN_NICU - np_pdiff_25))/`total'
+		egen mse_np_pdiff_50 = sum(abs(ADMN_NICU - np_pdiff_50))/`total'
+		egen mse_np_pdiff_75 = sum(abs(ADMN_NICU - np_pdiff_75))/`total'
+		egen mse_np_pdiff_100 = sum(abs(ADMN_NICU - np_pdiff_100))/`total'
 
 	* PERCENTILE OF TOTAL_CHARGES 
 		bysort DISCHARGE THCIC_ID: egen ptile_abcharges_diff_85 = pctile(TOTAL_CHARGES), p(85)
@@ -133,6 +138,10 @@ labelsc= ["385/789 Neonates died or transferred",
 		replace np_abdiff_85 = 1 if TOTAL_CHARGES > ptile_abcharges_diff_85 | nicu_prediction == 1
 		replace np_abdiff_90 = 1 if TOTAL_CHARGES > ptile_abcharges_diff_90 | nicu_prediction == 1
 		replace np_abdiff_95 = 1 if TOTAL_CHARGES > ptile_abcharges_diff_95 | nicu_prediction == 1
+		* MSE's
+		egen mse_np_abdiff_85 = sum(abs(ADMN_NICU-np_abdiff_85))/`total'
+		egen mse_np_abdiff_90 = sum(abs(ADMN_NICU-np_abdiff_90))/`total'
+		egen mse_np_abdiff_95 = sum(abs(ADMN_NICU-np_abdiff_95))/`total'
 	
 	
 	* PERCENTILE OF DIFFERENCE WITH RESPECT TO TOTAL_CHARGES 
@@ -147,21 +156,30 @@ labelsc= ["385/789 Neonates died or transferred",
 		replace np_ptcdiff_85 = 1 if TOTAL_CHARGES > ptile_charges_diff_85 | nicu_prediction == 1
 		replace np_ptcdiff_90 = 1 if TOTAL_CHARGES > ptile_charges_diff_90 | nicu_prediction == 1
 		replace np_ptcdiff_95 = 1 if TOTAL_CHARGES > ptile_charges_diff_95 | nicu_prediction == 1
+		* MSE
+		egen mse_np_ptcdiff_85 = sum(abs(ADMN_NICU - np_ptcdiff_85))/`total'
+		egen mse_np_ptcdiff_90 = sum(abs(ADMN_NICU - np_ptcdiff_90))/`total'
+		egen mse_np_ptcdiff_95 = sum(abs(ADMN_NICU - np_ptcdiff_95))/`total'
 
 
 ***********************************  NOW DON'T ADD AUTO_ADMITS *****************************************
 
 
 * Difference in charges
-	gen np_abs_charge_0 = 0
-	gen np_abs_charge_250 = 0
-	gen np_abs_charge_500 = 0
-	gen np_abs_charge_1000 = 0
+	gen np_abs_charge_wo_0 = 0
+	gen np_abs_charge_wo_250 = 0
+	gen np_abs_charge_wo_500 = 0
+	gen np_abs_charge_wo_1000 = 0
 	* Replace as 1 if absolute charge diff greater than values given OR guaranteed admit on basis of automatic criteria above
-	replace np_abs_charge_0 = 1 if charges_diff >0 
-	replace np_abs_charge_250 = 1 if charges_diff >250 
-	replace np_abs_charge_500 = 1 if charges_diff >500 
-	replace np_abs_charge_1000 = 1 if charges_diff >1000 
+	replace np_abs_charge_wo_0 = 1 if charges_diff >0 
+	replace np_abs_charge_wo_250 = 1 if charges_diff >250 
+	replace np_abs_charge_wo_500 = 1 if charges_diff >500 
+	replace np_abs_charge_wo_1000 = 1 if charges_diff >1000 
+	* MSE
+	egen mse_wo_np_abs_charge_0 = sum(abs(ADMN_NICU-np_abs_charge_wo_0)/`total'
+	egen mse_wo_np_abs_charge_250 = sum(abs(ADMN_NICU-np_abs_charge_wo_250)/`total'
+	egen mse_wo_np_abs_charge_500 = sum(abs(ADMN_NICU-np_abs_charge_wo_500)/`total'
+	egen mse_wo_np_abs_charge_1000 = sum(abs(ADMN_NICU-np_abs_charge_wo_1000)/`total'
 
 
 
@@ -178,6 +196,11 @@ labelsc= ["385/789 Neonates died or transferred",
 		replace np_pdiff_50_wo = 1 if TOTAL_CHARGES > 1.50*quarter_avg_charges 
 		replace np_pdiff_75_wo = 1 if TOTAL_CHARGES > 1.75*quarter_avg_charges 
 		replace np_pdiff_100_wo = 1 if TOTAL_CHARGES > 2.00*quarter_avg_charges 
+		* MSEs
+		egen mse_np_pdiff_25_wo = sum(abs(ADMN_NICU - np_pdiff_25_wo)/`total'
+		egen mse_np_pdiff_50_wo = sum(abs(ADMN_NICU - np_pdiff_50_wo)/`total'
+		egen mse_np_pdiff_75_wo = sum(abs(ADMN_NICU - np_pdiff_75_wo)/`total'
+		egen mse_np_pdiff_100_wo = sum(abs(ADMN_NICU - np_pdiff_100_wo)/`total'
 
 	* PERCENTILE OF TOTAL_CHARGES 
 		* Predictors:
@@ -188,6 +211,10 @@ labelsc= ["385/789 Neonates died or transferred",
 		replace np_abdiff_85_wo = 1 if TOTAL_CHARGES > ptile_abcharges_diff_85 
 		replace np_abdiff_90_wo = 1 if TOTAL_CHARGES > ptile_abcharges_diff_90 
 		replace np_abdiff_95_wo = 1 if TOTAL_CHARGES > ptile_abcharges_diff_95 
+		* MSEs 
+		egen mse_np_abdiff_85_wo = sum(abs(ADMN_NICU - np_abdiff_85_wo)/`total'
+		egen mse_np_abdiff_90_wo = sum(abs(ADMN_NICU - np_abdiff_90_wo)/`total'
+		egen mse_np_abdiff_95_wo = sum(abs(ADMN_NICU - np_abdiff_95_wo)/`total'
 	
 	
 	* PERCENTILE OF DIFFERENCE WITH RESPECT TO TOTAL_CHARGES 
@@ -199,6 +226,10 @@ labelsc= ["385/789 Neonates died or transferred",
 		replace np_ptcdiff_85_wo = 1 if TOTAL_CHARGES > ptile_charges_diff_85 
 		replace np_ptcdiff_90_wo = 1 if TOTAL_CHARGES > ptile_charges_diff_90 
 		replace np_ptcdiff_95_wo = 1 if TOTAL_CHARGES > ptile_charges_diff_95 
+		* MSEs
+		egen mse_np_ptcdiff_85_wo = sum(abs(ADMN_NICU - np_ptcdiff_85_wo)/`total'
+		egen mse_np_ptcdiff_90_wo = sum(abs(ADMN_NICU - np_ptcdiff_90_wo)/`total'
+		egen mse_np_ptcdiff_95_wo = sum(abs(ADMN_NICU - np_ptcdiff_95_wo)/`total'
 
 
 
