@@ -138,9 +138,9 @@ labelsc= ["385/789 Neonates died or transferred",
 		* ROCTAB BELOW
 
 	* PERCENTILE OF TOTAL_CHARGES 
-		bysort DISCHARGE THCIC_ID: egen ptile_abcharges_diff_85 = pctile(TOTAL_CHARGES), p(85)
-		bysort DISCHARGE THCIC_ID: egen ptile_abcharges_diff_90 = pctile(TOTAL_CHARGES), p(90)
-		bysort DISCHARGE THCIC_ID: egen ptile_abcharges_diff_95 = pctile(TOTAL_CHARGES), p(95)
+		bysort DISCHARGE THCIC_ID: egen ptile_abcharges_diff_85 = pctile(quarter_avg_charges), p(85)
+		bysort DISCHARGE THCIC_ID: egen ptile_abcharges_diff_90 = pctile(quarter_avg_charges), p(90)
+		bysort DISCHARGE THCIC_ID: egen ptile_abcharges_diff_95 = pctile(quarter_avg_charges), p(95)
 		* Predictors:
 		gen np_abdiff_85 = 0
 		gen np_abdiff_90 = 0
@@ -167,9 +167,9 @@ labelsc= ["385/789 Neonates died or transferred",
 		gen np_ptcdiff_90 = 0
 		gen np_ptcdiff_95 = 0
 		* Replace as 1 if Total Charges greater than X%-ile of the hospital-quarter mean OR guaranteed admits on basis of automatic criteria 
-		replace np_ptcdiff_85 = 1 if TOTAL_CHARGES > ptile_charges_diff_85 | nicu_prediction == 1
-		replace np_ptcdiff_90 = 1 if TOTAL_CHARGES > ptile_charges_diff_90 | nicu_prediction == 1
-		replace np_ptcdiff_95 = 1 if TOTAL_CHARGES > ptile_charges_diff_95 | nicu_prediction == 1
+		replace np_ptcdiff_85 = 1 if charges_diff > ptile_charges_diff_85 | nicu_prediction == 1
+		replace np_ptcdiff_90 = 1 if charges_diff > ptile_charges_diff_90 | nicu_prediction == 1
+		replace np_ptcdiff_95 = 1 if charges_diff > ptile_charges_diff_95 | nicu_prediction == 1
 		* MSE
 		egen mse_np_ptcdiff_85 = sum(abs(ADMN_NICU - np_ptcdiff_85))
 		replace mse_np_ptcdiff_85 = mse_np_ptcdiff_85/`tot_count'
@@ -272,12 +272,9 @@ log using "`data_p'/logs/admit_algo.log", replace
 	di "********************************************************************************************************"
 	di "Predictions when absolute charge is $0, $250, $500 or $1000 greater than facility-quarter specific mean"
 	di "Adds all automatic admits"
-	di "Cutpoints: 0 -> $0"
-	quietly{
-	egen tpred = rowtotal(np_abs_charge_0 np_abs_charge_250 np_abs_charge_500 np_abs_charge_1000) 
-	gen abs_charge_predictor = 4 - tpred
-	}
-	roctab ADMN_NICU abs_charge_predictor, detail table
+	di "Cutpoints: 0 -> <mean, 1 -> $0-250 greater, 2 -> $0-500 greater, 3 -> $0-1000 greater, 4-> >$1000 greater"
+	quietly egen tpred = rowtotal(np_abs_charge_0 np_abs_charge_250 np_abs_charge_500 np_abs_charge_1000) 
+	roctab ADMN_NICU tpred, detail table
 	di "Mean-squared error for the same predictions"
 	summarize mse_abs_charge_0
 	summarize mse_abs_charge_250
@@ -291,10 +288,8 @@ log using "`data_p'/logs/admit_algo.log", replace
 	di "*********************************************************************************************************************"
 	di "Predictions when absolute charge is 25%, 50%, 75% or 100% greater than facility-quarter specific mean"
 	di "Adds all automatic admits"
-	di "Cutpoints: 0 -> <25%+ avg charge, 1 -> >25-49% avg chg, 2 -> 50-74% avg chg, 3 -> 75-100% avg chg, 4-> >100%+ avg chg"
-	quietly{
-	egen tpctpred = rowtotal(np_pdiff_25 np_pdiff_50 np_pdiff_75 np_pdiff_100)
-	}
+	di "Cutpoints: 0 -> <25%+ avg charge, 1 -> >0-25% avg chg, 2 -> 0-50% avg chg, 3 -> 0-75% avg chg, 4-> 0-100%+ avg chg"
+	quietly egen tpctpred = rowtotal(np_pdiff_25 np_pdiff_50 np_pdiff_75 np_pdiff_100)
 	roctab ADMN_NICU tpctpred, detail table 
 	di "Mean-squared error for the same predictions"
 	summarize mse_np_pdiff_25 
@@ -307,9 +302,9 @@ log using "`data_p'/logs/admit_algo.log", replace
 	
 	* Percentiles of the facility-specific mean diff
 	di "*********************************************************************************************************************"
-	di "Predictions when  (patient charge - facility-quarter mean) is greater than 85th 90th and 95th %-iles of the  facility-quarter specific mean"
+	di "Predictions when  patient charge  is greater than 85th 90th and 95th %-iles of the facility-quarter specific mean"
 	di "Adds all automatic admits"
-	di "Cutpoints: 0 -> <85th%ile diff charge, 1 -> >85th%ile diff chg, 2 -> >90th%ile diff chg, 3 -> >95th%ile diff chg"
+	di "Cutpoints: 0 -> <85th%ile diff charge, 1 -> 85th-89th%ile diff chg, 2 -> 90th-94th%ile diff chg, 3 -> >95th%ile diff chg"
 	quietly egen abpreddiff = rowtotal(np_abdiff_85 np_abdiff_90 np_abdiff_95)
 	roctab ADMN_NICU abpreddiff, detail table 
 	di "Mean-squared error for the same predictions"
@@ -323,9 +318,8 @@ log using "`data_p'/logs/admit_algo.log", replace
 	* 
 	di "*********************************************************************************************************************"
 	di "Predictions when  (patient charge - facility-quarter mean) is greater than 85th 90th and 95th %-iles of that difference"
-	di "(I find this a little trickier to grasp intuitively)"
 	di "Adds all automatic admits"
-	di "Cutpoints: 0 -> , 1 -> , 2 -> , 3 -> "
+	di "Cutpoints: 0 -> <85th%ile diff charge, 1 -> 85th-89th%ile diff chg, 2 -> 90th-94th%ile diff chg, 3 -> >95th%ile diff chg"
 	quietly egen pctdiffpred = rowtotal(np_ptcdiff_85 np_ptcdiff_90 np_ptcdiff_95)
 	roctab ADMN_NICU pctdiffpred, detail table
 	di "Mean-squared error for the same predictions"
@@ -345,12 +339,12 @@ di " Now w/out any auto-admits "
 
 	* 
 	di "*********************************************************************************************************************"
-	di "Predictions when  (patient charge - facility-quarter mean) is greater than 85th 90th and 95th %-iles of the  facility-quarter specific mean"
-	di "Adds all automatic admits"
-	di "Cutpoints: 0 -> , 1 -> , 2 -> , 3 -> , 4 -> "
+	di "Predictions when charge is $0, $250, $500, $1000 greater than the facility-quarter specific mean"
+	di "Does not add automatic admits"
+	di "Cutpoints: 0 -> <mean, 1 -> $0-250 greater, 2 -> $0-500 greater, 3 -> $0-1000 greater, 4-> >$1000 greater"
 	quietly egen na_abpreddiff =  rowtotal(np_abs_charge_wo_0 np_abs_charge_wo_250 np_abs_charge_wo_500 np_abs_charge_wo_1000)
 	roctab ADMN_NICU na_abpreddiff, detail table 
-		di "Mean-squared error for the same predictions"
+	di "Mean-squared error for the same predictions"
 	summarize mse_wo_np_abs_charge_0 
 	summarize mse_wo_np_abs_charge_250 
 	summarize mse_wo_np_abs_charge_500 
@@ -359,10 +353,52 @@ di " Now w/out any auto-admits "
 	di "    "
 	di "    "
 	
+	* 
+	di "*********************************************************************************************************************"
+	di "Predictions when  patient charge  is 25%, 50%, 75%, 100% greater than the facility-quarter specific mean"
+	di "Does not add automatic admits"
+	di "Cutpoints: 0 -> <25%+ avg charge, 1 -> >0-25% avg chg, 2 -> 0-50% avg chg, 3 -> 0-75% avg chg, 4-> 0-100%+ avg chg"
+	quietly egen na_tpctpred = rowtotal(np_pdiff_25_wo np_pdiff_50_wo np_pdiff_75_wo np_pdiff_100_wo)
+	roctab ADMN_NICU na_tpctpred, detail table 
+	di "Mean-squared error for the same predictions"
+	summarize mse_np_pdiff_25_wo 
+	summarize mse_np_pdiff_50_wo 
+	summarize mse_np_pdiff_75_wo 
+	summarize mse_np_pdiff_100_wo 
+	di "    "
+	di "    "
+	di "    "
+	
+	* 
+	di "*********************************************************************************************************************"
+	di "Predictions when  patient charge is greater than 85th 90th and 95th %-iles of the facility-quarter specific mean"
+	di "Does not add automatic admits"
+	di "Cutpoints: 0 -> <85th%ile diff charge, 1 -> 85th-89th%ile diff chg, 2 -> 90th-94th%ile diff chg, 3 -> >95th%ile diff chg"
+	quietly na_abpdiff egen = rowtotal( np_abdiff_85_wo np_abdiff_90_wo np_abdiff_95_wo)
+	roctab ADMN_NICU abpdiff, detail table
+	di "Mean-squared error for the same predictions"
+	summarize mse_np_abdiff_85_wo 
+	summarize mse_np_abdiff_90_wo 
+	summarize mse_np_abdiff_95_wo 
+	di "    "
+	di "    "
+	di "    "
 	
 	
+	* 
+	di "*********************************************************************************************************************"
+	di "Predictions when  patient charge is greater than 85th 90th and 95th %-iles of the facility-quarter specific mean"
+	di "Does not add automatic admits"
+	di "Cutpoints: 0 -> <85th%ile diff charge, 1 -> 85th-89th%ile diff chg, 2 -> 90th-94th%ile diff chg, 3 -> >95th%ile diff chg"
+	quietly egen na_pctdiffpred = rowtotal(np_ptcdiff_85_wo np_ptcdiff_90_wo np_ptcdiff_95_wo)
+	roctab ADMN_NICU na_pctdiffpred, detail table 
+	di "Mean-squared error for the same predictions"
+	summarize mse_np_ptcdiff_85_wo 
+	summarize mse_np_ptcdiff_90_wo 
+	summarize mse_np_ptcdiff_95_wo 
+	di "    "
+	di "    "
+	di "    "	
 	
 	
-	
-	
-	
+log close 
