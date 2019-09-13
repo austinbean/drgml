@@ -1,5 +1,5 @@
 
-local whereami = tuk39938 
+local whereami = "tuk39938" 
 local file_p = "/Users/`whereami'/Desktop/programs/drgml/"
 local data_p = "/Users/`whereami'/Google Drive/Texas PUDF Zipped Backup Files/"
 
@@ -64,7 +64,7 @@ labelsc= ["385/789 Neonates died or transferred",
 	
 	sort DISCHARGE THCIC_ID 
 
-* hospital specific counts (actual admits - uses charges)
+* hospital specific counts (actual admits -> uses charges)
 	bysort DISCHARGE THCIC_ID: egen quarter_admits = sum(ADMN_NICU)
 
 * hospital specific charges - for well babies only (DRG 391):
@@ -80,6 +80,12 @@ labelsc= ["385/789 Neonates died or transferred",
 	replace nicu_prediction = 1 if PATIENT_STATUS == 20 
 		* Gestational Age
 		* NOT AVAILABLE. 
+		
+		
+************************************** ADDS AUTO_ADMITS TO PREDICTION ***********************************
+	
+	count 
+	local total = `r(N)'
 	
 
 * Difference in charges
@@ -93,10 +99,16 @@ labelsc= ["385/789 Neonates died or transferred",
 	replace np_abs_charge_250 = 1 if charges_diff >250 | nicu_prediction == 1
 	replace np_abs_charge_500 = 1 if charges_diff >500 | nicu_prediction == 1
 	replace np_abs_charge_1000 = 1 if charges_diff >1000 | nicu_prediction == 1
-
+	
+	* MSE's 
+	egen mse_abs_charge_0 = sum(abs(ADMN_NICU - np_abs_charge_0))/`total'
+	egen mse_abs_charge_250 = sum(abs(ADMN_NICU - np_abs_charge_250))/`total'
+	egen mse_abs_charge_500 = sum(abs(ADMN_NICU - np_abs_charge_500))/`total'
+	egen mse_abs_charge_1000 = sum(abs(ADMN_NICU - np_abs_charge_1000))/`total'
 
 
 * By Charges
+
 	* CHARGES PERCENT DIFFERENCE 
 		* Predictors:
 		gen np_pdiff_25 = 0
@@ -108,6 +120,7 @@ labelsc= ["385/789 Neonates died or transferred",
 		replace np_pdiff_50 = 1 if TOTAL_CHARGES > 1.50*quarter_avg_charges | nicu_prediction == 1
 		replace np_pdiff_75 = 1 if TOTAL_CHARGES > 1.75*quarter_avg_charges | nicu_prediction == 1
 		replace np_pdiff_100 = 1 if TOTAL_CHARGES > 2.00*quarter_avg_charges | nicu_prediction == 1
+
 	* PERCENTILE OF TOTAL_CHARGES 
 		bysort DISCHARGE THCIC_ID: egen ptile_abcharges_diff_85 = pctile(TOTAL_CHARGES), p(85)
 		bysort DISCHARGE THCIC_ID: egen ptile_abcharges_diff_90 = pctile(TOTAL_CHARGES), p(90)
@@ -117,23 +130,76 @@ labelsc= ["385/789 Neonates died or transferred",
 		gen np_abdiff_90 = 0
 		gen np_abdiff_95 = 0
 		* Replace as 1 if Total Charges greater than X%-ile of the hospital-quarter mean OR guaranteed admits on basis of automatic criteria 
-		replace np_abdiff_85 = 1 if TOTAL_CHARGES > ptile_charges_diff_85 | nicu_prediction == 1
-		replace np_abdiff_90 = 1 if TOTAL_CHARGES > ptile_charges_diff_90 | nicu_prediction == 1
-		replace np_abdiff_95 = 1 if TOTAL_CHARGES > ptile_charges_diff_95 | nicu_prediction == 1
-	* PERCENTILE OF DIFFERENCE WITH RESPECT TO TOTAL_CHARGES 
+		replace np_abdiff_85 = 1 if TOTAL_CHARGES > ptile_abcharges_diff_85 | nicu_prediction == 1
+		replace np_abdiff_90 = 1 if TOTAL_CHARGES > ptile_abcharges_diff_90 | nicu_prediction == 1
+		replace np_abdiff_95 = 1 if TOTAL_CHARGES > ptile_abcharges_diff_95 | nicu_prediction == 1
 	
-	* TODO *****
-		bysort DISCHARGE THCIC_ID: egen ptile_abcharges_diff_85 = pctile(TOTAL_CHARGES), p(85)
-		bysort DISCHARGE THCIC_ID: egen ptile_abcharges_diff_90 = pctile(TOTAL_CHARGES), p(90)
-		bysort DISCHARGE THCIC_ID: egen ptile_abcharges_diff_95 = pctile(TOTAL_CHARGES), p(95)
+	
+	* PERCENTILE OF DIFFERENCE WITH RESPECT TO TOTAL_CHARGES 
+		bysort DISCHARGE THCIC_ID: egen ptile_charges_diff_85 = pctile(charges_diff), p(85)
+		bysort DISCHARGE THCIC_ID: egen ptile_charges_diff_90 = pctile(charges_diff), p(90)
+		bysort DISCHARGE THCIC_ID: egen ptile_charges_diff_95 = pctile(charges_diff), p(95)
 		* Predictors:
-		gen np_abdiff_85 = 0
-		gen np_abdiff_90 = 0
-		gen np_abdiff_95 = 0
+		gen np_ptcdiff_85 = 0
+		gen np_ptcdiff_90 = 0
+		gen np_ptcdiff_95 = 0
 		* Replace as 1 if Total Charges greater than X%-ile of the hospital-quarter mean OR guaranteed admits on basis of automatic criteria 
-		replace np_abdiff_85 = 1 if TOTAL_CHARGES > ptile_charges_diff_85 | nicu_prediction == 1
-		replace np_abdiff_90 = 1 if TOTAL_CHARGES > ptile_charges_diff_90 | nicu_prediction == 1
-		replace np_abdiff_95 = 1 if TOTAL_CHARGES > ptile_charges_diff_95 | nicu_prediction == 1
+		replace np_ptcdiff_85 = 1 if TOTAL_CHARGES > ptile_charges_diff_85 | nicu_prediction == 1
+		replace np_ptcdiff_90 = 1 if TOTAL_CHARGES > ptile_charges_diff_90 | nicu_prediction == 1
+		replace np_ptcdiff_95 = 1 if TOTAL_CHARGES > ptile_charges_diff_95 | nicu_prediction == 1
+
+
+***********************************  NOW DON'T ADD AUTO_ADMITS *****************************************
+
+
+* Difference in charges
+	gen np_abs_charge_0 = 0
+	gen np_abs_charge_250 = 0
+	gen np_abs_charge_500 = 0
+	gen np_abs_charge_1000 = 0
+	* Replace as 1 if absolute charge diff greater than values given OR guaranteed admit on basis of automatic criteria above
+	replace np_abs_charge_0 = 1 if charges_diff >0 
+	replace np_abs_charge_250 = 1 if charges_diff >250 
+	replace np_abs_charge_500 = 1 if charges_diff >500 
+	replace np_abs_charge_1000 = 1 if charges_diff >1000 
+
+
+
+* By Charges
+
+	* CHARGES PERCENT DIFFERENCE 
+		* Predictors:
+		gen np_pdiff_25_wo = 0
+		gen np_pdiff_50_wo = 0
+		gen np_pdiff_75_wo = 0
+		gen np_pdiff_100_wo = 0
+		* Replace as 1 if Total Charges greater than +% of the hospital-quarter mean OR guaranteed admits on basis of automatic criteria 
+		replace np_pdiff_25_wo = 1 if TOTAL_CHARGES > 1.25*quarter_avg_charges 
+		replace np_pdiff_50_wo = 1 if TOTAL_CHARGES > 1.50*quarter_avg_charges 
+		replace np_pdiff_75_wo = 1 if TOTAL_CHARGES > 1.75*quarter_avg_charges 
+		replace np_pdiff_100_wo = 1 if TOTAL_CHARGES > 2.00*quarter_avg_charges 
+
+	* PERCENTILE OF TOTAL_CHARGES 
+		* Predictors:
+		gen np_abdiff_85_wo = 0
+		gen np_abdiff_90_wo = 0
+		gen np_abdiff_95_wo = 0
+		* Replace as 1 if Total Charges greater than X%-ile of the hospital-quarter mean OR guaranteed admits on basis of automatic criteria 
+		replace np_abdiff_85_wo = 1 if TOTAL_CHARGES > ptile_abcharges_diff_85 
+		replace np_abdiff_90_wo = 1 if TOTAL_CHARGES > ptile_abcharges_diff_90 
+		replace np_abdiff_95_wo = 1 if TOTAL_CHARGES > ptile_abcharges_diff_95 
+	
+	
+	* PERCENTILE OF DIFFERENCE WITH RESPECT TO TOTAL_CHARGES 
+		* Predictors:
+		gen np_ptcdiff_85_wo = 0
+		gen np_ptcdiff_90_wo = 0
+		gen np_ptcdiff_95_wo = 0
+		* Replace as 1 if Total Charges greater than X%-ile of the hospital-quarter mean OR guaranteed admits on basis of automatic criteria 
+		replace np_ptcdiff_85_wo = 1 if TOTAL_CHARGES > ptile_charges_diff_85 
+		replace np_ptcdiff_90_wo = 1 if TOTAL_CHARGES > ptile_charges_diff_90 
+		replace np_ptcdiff_95_wo = 1 if TOTAL_CHARGES > ptile_charges_diff_95 
+
 
 
 
