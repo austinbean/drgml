@@ -14,7 +14,7 @@ foreach yr of numlist 2004(1)2012{
 
 }
 
-sample 5
+// sample 5
 
 
 /*
@@ -332,7 +332,8 @@ log using "`data_p'log files/admit_algo.smcl", replace
 	summarize mse_np_ptcdiff_90 
 	summarize mse_np_ptcdiff_95
 
-	
+
+	*******************************************************
 
 	* 
 // "*********************************************************************************************************************"
@@ -340,7 +341,7 @@ log using "`data_p'log files/admit_algo.smcl", replace
 // "Does not add automatic admits"
 // "Cutpoints: 0 -> <mean, 1 -> $0-250 greater, 2 -> $0-500 greater, 3 -> $0-1000 greater, 4-> >$1000 greater"
 	quietly egen na_abpreddiff =  rowtotal(np_abs_charge_wo_0 np_abs_charge_wo_250 np_abs_charge_wo_500 np_abs_charge_wo_1000)
-	roctab ADMN_NICU na_abpreddiff, detail table graph plotopts(title("Total Charge is $0, $250,"  "$500, $1000 Greater" "than Hosp.-Quarter Mean") graphregion(color(white)) note("Excluding Automatically Admitted Patients"))
+	roctab ADMN_NICU na_abpreddiff, detail table graph plotopts(title("Total Charge is $0, $250," "$500, $1000 Greater" "than Hospital-Quarter Mean") graphregion(color(white)) note("Excluding Automatically Admitted Patients"))
 	graph save "`data_p'graphs/admit_alg/senspec_abs_charge_naa.gph", replace
 	graph export "`data_p'graphs/admit_alg/senspec_abs_charge_naa.png", replace
 	di "Mean-squared error for the same predictions"
@@ -372,7 +373,7 @@ log using "`data_p'log files/admit_algo.smcl", replace
 // "Does not add automatic admits"
 // "Cutpoints: 0 -> <85th%ile diff charge, 1 -> 85th-89th%ile diff chg, 2 -> 90th-94th%ile diff chg, 3 -> >95th%ile diff chg"
 	quietly  egen na_abpdiff = rowtotal( np_abdiff_85_wo np_abdiff_90_wo np_abdiff_95_wo)
-	roctab ADMN_NICU na_abpdiff, detail table graph plotopts(title("Total Charge is at or Greater" "than 85th, 90th, 95th" "%ile of Hospital-Quarter Mean") graphregion(color(white)) note("Excluding Automatically Admitted Patients") )
+	roctab ADMN_NICU na_abpdiff, detail table graph plotopts(title("Total Charge is at or Greater" "than 85th, 90th, 95th"  "%ile of Hosp.-Quarter Mean") graphregion(color(white)) note("Excluding Automatically Admitted Patients") )
 	graph save "`data_p'graphs/admit_alg/senspec_pctile_charge_naa.gph", replace
 	graph export "`data_p'graphs/admit_alg/senspec_pctile_charge_naa.png", replace
 	di "Mean-squared error for the same predictions"
@@ -388,7 +389,7 @@ log using "`data_p'log files/admit_algo.smcl", replace
 // "Does not add automatic admits"
 // "Cutpoints: 0 -> <85th%ile diff charge, 1 -> 85th-89th%ile diff chg, 2 -> 90th-94th%ile diff chg, 3 -> >95th%ile diff chg"
 	quietly egen na_pctdiffpred = rowtotal(np_ptcdiff_85_wo np_ptcdiff_90_wo np_ptcdiff_95_wo)
-	roctab ADMN_NICU na_pctdiffpred, detail table graph plotopts(title("Patient Charge - Fac-Quart. Mean"  "is at or Greater" "than 85th, 90th, 95th %ile of Patient Charge - Hospital-Quarter Mean") graphregion(color(white)) note("Excluding Automatically Admitted Patients") )
+	roctab ADMN_NICU na_pctdiffpred, detail table graph plotopts(title("Patient Charge - Fac-Quart."  "Mean is at or Greater" "than 85th, 90th, 95th %ile of Patient"  "Charge - Hospital-Quarter Mean") graphregion(color(white)) note("Excluding Automatically Admitted Patients") )
 	graph save "`data_p'graphs/admit_alg/senspec_pcdiff_charge_naa.gph", replace
 	graph export "`data_p'graphs/admit_alg/senspec_pcdiff_charge_naa.png", replace
 	di "Mean-squared error for the same predictions"
@@ -417,8 +418,8 @@ translate "`data_p'log files/admit_algo.smcl" "`data_p'log files/admit_algo.pdf"
 	graph export "`data_p'graphs/admit_alg/combined_percentile_diff.png", replace
 
 
-stop
 
+	
 
 // keep mse*
 // keep if _n == 1
