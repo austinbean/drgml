@@ -277,7 +277,7 @@ log using "`data_p'log files/admit_algo.smcl", replace
 // "Adds all automatic admits"
 // "Cutpoints: 0 -> <mean, 1 -> $0-250 greater, 2 -> $0-500 greater, 3 -> $0-1000 greater, 4-> >$1000 greater"
 	quietly egen tpred = rowtotal(np_abs_charge_0 np_abs_charge_250 np_abs_charge_500 np_abs_charge_1000) 
-	roctab ADMN_NICU tpred, detail table graph plotopts(title("Total Charge is $0, $250, $500, $1000 Greater" "than Hospital-Quarter Mean") graphregion(color(white)) note("Including Automatically Admitted Patients: <1500 g, Sick DRG, All Deaths"))
+	roctab ADMN_NICU tpred, detail table graph plotopts(title("Total Charge is $0, $250," "$500, $1000 Greater" "than Hospital-Quarter Mean") graphregion(color(white)) note("Including Automatically Admitted Patients: <1500 g, Sick DRG, All Deaths"))
 	graph save "`data_p'graphs/admit_alg/senspec_abs_charge_aa.gph", replace
 	graph export "`data_p'graphs/admit_alg/senspec_abs_charge_aa.png", replace
 	di "Mean-squared error for the same predictions"
@@ -388,7 +388,7 @@ log using "`data_p'log files/admit_algo.smcl", replace
 // "Does not add automatic admits"
 // "Cutpoints: 0 -> <85th%ile diff charge, 1 -> 85th-89th%ile diff chg, 2 -> 90th-94th%ile diff chg, 3 -> >95th%ile diff chg"
 	quietly egen na_pctdiffpred = rowtotal(np_ptcdiff_85_wo np_ptcdiff_90_wo np_ptcdiff_95_wo)
-	roctab ADMN_NICU na_pctdiffpred, detail table graph plotopts(title("Patient Charge - Fac-Quart. Mean is at or Greater" "than 85th, 90th, 95th %ile of Patient Charge - Hospital-Quarter Mean") graphregion(color(white)) note("Excluding Automatically Admitted Patients") )
+	roctab ADMN_NICU na_pctdiffpred, detail table graph plotopts(title("Patient Charge - Fac-Quart. Mean"  "is at or Greater" "than 85th, 90th, 95th %ile of Patient Charge - Hospital-Quarter Mean") graphregion(color(white)) note("Excluding Automatically Admitted Patients") )
 	graph save "`data_p'graphs/admit_alg/senspec_pcdiff_charge_naa.gph", replace
 	graph export "`data_p'graphs/admit_alg/senspec_pcdiff_charge_naa.png", replace
 	di "Mean-squared error for the same predictions"
