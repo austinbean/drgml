@@ -1,5 +1,5 @@
 
-local whereami = "austinbean" 
+local whereami = "tuk39938" 
 local file_p = "/Users/`whereami'/Desktop/programs/drgml/"
 local data_p = "/Users/`whereami'/Google Drive/Texas PUDF Zipped Backup Files/"
 
@@ -14,7 +14,6 @@ foreach yr of numlist 2004(1)2012{
 
 }
 
-// sample 5
 
 
 /*
@@ -141,10 +140,19 @@ labelsc= ["385/789 Neonates died or transferred",
 		* ROCTAB BELOW
 
 	* PERCENTILE OF TOTAL_CHARGES 
-		bysort DISCHARGE THCIC_ID: egen ptile_abcharges_diff_85 = pctile(quarter_avg_charges), p(85)
-		bysort DISCHARGE THCIC_ID: egen ptile_abcharges_diff_90 = pctile(quarter_avg_charges), p(90)
-		bysort DISCHARGE THCIC_ID: egen ptile_abcharges_diff_95 = pctile(quarter_avg_charges), p(95)
+		bysort DISCHARGE THCIC_ID: egen ptile_abcharges_diff_85 = pctile(TOTAL_CHARGES), p(85)
+		bysort DISCHARGE THCIC_ID: egen hspec_85  = max(ptile_abcharges_diff_85)
+		replace ptile_abcharges_diff_85 = hspec_85 if ptile_abcharges_diff_85 == .
+		
+		bysort DISCHARGE THCIC_ID: egen ptile_abcharges_diff_90 = pctile(TOTAL_CHARGES), p(90)
+		bysort DISCHARGE THCIC_ID: egen hspec_90 = max(ptile_abcharges_diff_90)
+		replace ptile_abcharges_diff_90 = hspec_90 if ptile_abcharges_diff_90 == .
+		
+		bysort DISCHARGE THCIC_ID: egen ptile_abcharges_diff_95 = pctile(TOTAL_CHARGES), p(95)
+		bysort DISCHARGE THCIC_ID: egen hspec_95 = max(ptile_abcharges_diff_95)
+		replace ptile_abcharges_diff_95 = hspec_95 if ptile_abcharges_diff_95 == .		
 		* Predictors:
+		* browse ADMN_NICU np_abdiff_85 np_abdiff_90 np_abdiff_95 abpreddiff ptile_abcharges_diff_85 ptile_abcharges_diff_90 ptile_abcharges_diff_95 TOTAL_CHARGES
 		gen np_abdiff_85 = 0
 		gen np_abdiff_90 = 0
 		gen np_abdiff_95 = 0
@@ -159,12 +167,24 @@ labelsc= ["385/789 Neonates died or transferred",
 		replace mse_np_abdiff_90 = mse_np_abdiff_90/`tot_count'
 		egen mse_np_abdiff_95 = sum(abs(ADMN_NICU-np_abdiff_95))
 		replace mse_np_abdiff_95 = mse_np_abdiff_95/`tot_count'
+		* drop unused
+		drop hspec_*
 	
 	
 	* PERCENTILE OF DIFFERENCE WITH RESPECT TO TOTAL_CHARGES 
 		bysort DISCHARGE THCIC_ID: egen ptile_charges_diff_85 = pctile(charges_diff), p(85)
+		bysort DISCHARGE THCIC_ID: egen hspec_85  = max(ptile_charges_diff_85)
+		replace ptile_charges_diff_85 = hspec_85 if ptile_abcharges_diff_85 == .
+
 		bysort DISCHARGE THCIC_ID: egen ptile_charges_diff_90 = pctile(charges_diff), p(90)
+		bysort DISCHARGE THCIC_ID: egen hspec_90 = max(ptile_charges_diff_90)
+		replace ptile_charges_diff_90 = hspec_90 if ptile_charges_diff_90 == .
+
 		bysort DISCHARGE THCIC_ID: egen ptile_charges_diff_95 = pctile(charges_diff), p(95)
+		bysort DISCHARGE THCIC_ID: egen hspec_95 = max(ptile_charges_diff_95)
+		replace ptile_charges_diff_95 = hspec_95 if ptile_charges_diff_95 == .		
+
+		
 		* Predictors:
 		gen np_ptcdiff_85 = 0
 		gen np_ptcdiff_90 = 0
@@ -276,7 +296,8 @@ log using "`data_p'log files/admit_algo.smcl", replace
 // "Predictions when absolute charge is $0, $250, $500 or $1000 greater than facility-quarter specific mean"
 // "Adds all automatic admits"
 // "Cutpoints: 0 -> <mean, 1 -> $0-250 greater, 2 -> $0-500 greater, 3 -> $0-1000 greater, 4-> >$1000 greater"
-	quietly egen tpred = rowtotal(np_abs_charge_0 np_abs_charge_250 np_abs_charge_500 np_abs_charge_1000) 
+	egen tpred = rowtotal(np_abs_charge_0 np_abs_charge_250 np_abs_charge_500 np_abs_charge_1000) 
+	replace tpred = 0 if tpred == .
 	roctab ADMN_NICU tpred, detail table graph plotopts(title("Total Charge is $0, $250," "$500, $1000 Greater" "than Hospital-Quarter Mean") graphregion(color(white)) note("Including Automatically Admitted Patients: <1500 g, Sick DRG, All Deaths"))
 	graph save "`data_p'graphs/admit_alg/senspec_abs_charge_aa.gph", replace
 	graph export "`data_p'graphs/admit_alg/senspec_abs_charge_aa.png", replace
@@ -292,7 +313,8 @@ log using "`data_p'log files/admit_algo.smcl", replace
 // "Predictions when absolute charge is 25%, 50%, 75% or 100% greater than facility-quarter specific mean"
 // "Adds all automatic admits"
 // "Cutpoints: 0 -> <25%+ avg charge, 1 -> >0-25% avg chg, 2 -> 0-50% avg chg, 3 -> 0-75% avg chg, 4-> 0-100%+ avg chg"
-	quietly egen tpctpred = rowtotal(np_pdiff_25 np_pdiff_50 np_pdiff_75 np_pdiff_100)
+	egen tpctpred = rowtotal(np_pdiff_25 np_pdiff_50 np_pdiff_75 np_pdiff_100)
+	replace tpctpred = 0 if tpctpred == .
 	roctab ADMN_NICU tpctpred, detail table graph plotopts(title("Total Charge is 25%, 50%,"  "75%, 100% Greater" "than Hosp.-Quarter Mean") graphregion(color(white)) note("Including Automatically Admitted Patients: <1500 g, Sick DRG, All Deaths"))
 	graph save "`data_p'graphs/admit_alg/senspec_pct_charge_aa.gph", replace
 	graph export "`data_p'graphs/admit_alg/senspec_pct_charge_aa.png", replace
@@ -308,7 +330,8 @@ log using "`data_p'log files/admit_algo.smcl", replace
 // "Predictions when  patient charge  is greater than 85th 90th and 95th %-iles of the facility-quarter specific mean"
 // "Adds all automatic admits"
 // "Cutpoints: 0 -> <85th%ile diff charge, 1 -> 85th-89th%ile diff chg, 2 -> 90th-94th%ile diff chg, 3 -> >95th%ile diff chg"
-	quietly egen abpreddiff = rowtotal(np_abdiff_85 np_abdiff_90 np_abdiff_95)
+	egen abpreddiff = rowtotal(np_abdiff_85 np_abdiff_90 np_abdiff_95)
+	replace abpreddiff = 0 if abpreddiff == .
 	roctab ADMN_NICU abpreddiff, detail table graph plotopts(title("Total Charge is at or Greater" "than 85th, 90th, 95th"  "%ile of Hosp.-Quarter Mean") graphregion(color(white)) note("Including Automatically Admitted Patients: <1500 g, Sick DRG, All Deaths") )
 	graph save "`data_p'graphs/admit_alg/senspec_pctile_charge_aa.gph", replace
 	graph export "`data_p'graphs/admit_alg/senspec_pctile_charge_aa.png", replace
@@ -323,7 +346,8 @@ log using "`data_p'log files/admit_algo.smcl", replace
 // "Predictions when  (patient charge - facility-quarter mean) is greater than 85th 90th and 95th %-iles of that difference"
 // "Adds all automatic admits"
 // "Cutpoints: 0 -> <85th%ile diff charge, 1 -> 85th-89th%ile diff chg, 2 -> 90th-94th%ile diff chg, 3 -> >95th%ile diff chg"
-	quietly egen pctdiffpred = rowtotal(np_ptcdiff_85 np_ptcdiff_90 np_ptcdiff_95)
+	egen pctdiffpred = rowtotal(np_ptcdiff_85 np_ptcdiff_90 np_ptcdiff_95)
+	replace pctdiffpred = 0 if pctdiffpred == .
 	roctab ADMN_NICU pctdiffpred, detail table graph plotopts(title("Patient Charge - Fac-Quart."  "Mean is at or Greater" "than 85th, 90th, 95th %ile of Patient"  "Charge - Hospital-Quarter Mean") graphregion(color(white)) note("Including Automatically Admitted Patients: <1500 g, Sick DRG, All Deaths") )
 	graph save "`data_p'graphs/admit_alg/senspec_pcdiff_charge_aa.gph", replace
 	graph export "`data_p'graphs/admit_alg/senspec_pcdiff_charge_aa.png", replace
@@ -340,7 +364,8 @@ log using "`data_p'log files/admit_algo.smcl", replace
 // "Predictions when charge is $0, $250, $500, $1000 greater than the facility-quarter specific mean"
 // "Does not add automatic admits"
 // "Cutpoints: 0 -> <mean, 1 -> $0-250 greater, 2 -> $0-500 greater, 3 -> $0-1000 greater, 4-> >$1000 greater"
-	quietly egen na_abpreddiff =  rowtotal(np_abs_charge_wo_0 np_abs_charge_wo_250 np_abs_charge_wo_500 np_abs_charge_wo_1000)
+	egen na_abpreddiff =  rowtotal(np_abs_charge_wo_0 np_abs_charge_wo_250 np_abs_charge_wo_500 np_abs_charge_wo_1000)
+	replace na_abpreddiff = 0 if na_abpreddiff == .
 	roctab ADMN_NICU na_abpreddiff, detail table graph plotopts(title("Total Charge is $0, $250," "$500, $1000 Greater" "than Hospital-Quarter Mean") graphregion(color(white)) note("Excluding Automatically Admitted Patients"))
 	graph save "`data_p'graphs/admit_alg/senspec_abs_charge_naa.gph", replace
 	graph export "`data_p'graphs/admit_alg/senspec_abs_charge_naa.png", replace
@@ -356,7 +381,8 @@ log using "`data_p'log files/admit_algo.smcl", replace
 // "Predictions when  patient charge  is 25%, 50%, 75%, 100% greater than the facility-quarter specific mean"
 // "Does not add automatic admits"
 // "Cutpoints: 0 -> <25%+ avg charge, 1 -> >0-25% avg chg, 2 -> 0-50% avg chg, 3 -> 0-75% avg chg, 4-> 0-100%+ avg chg"
-	quietly egen na_tpctpred = rowtotal(np_pdiff_25_wo np_pdiff_50_wo np_pdiff_75_wo np_pdiff_100_wo)
+	egen na_tpctpred = rowtotal(np_pdiff_25_wo np_pdiff_50_wo np_pdiff_75_wo np_pdiff_100_wo)
+	replace na_tpctpred = 0 if na_tpctpred == .
 	roctab ADMN_NICU na_tpctpred, detail table graph plotopts(title("Total Charge is 25%, 50%,"  "75%, 100% Greater" "than Hosp.-Quarter Mean") graphregion(color(white)) note("Excluding Automatically Admitted Patients"))
 	graph save "`data_p'graphs/admit_alg/senspec_pct_charge_naa.gph", replace
 	graph export "`data_p'graphs/admit_alg/senspec_pct_charge_naa.png", replace
@@ -372,7 +398,8 @@ log using "`data_p'log files/admit_algo.smcl", replace
 // "Predictions when  patient charge is greater than 85th 90th and 95th %-iles of the facility-quarter specific mean"
 // "Does not add automatic admits"
 // "Cutpoints: 0 -> <85th%ile diff charge, 1 -> 85th-89th%ile diff chg, 2 -> 90th-94th%ile diff chg, 3 -> >95th%ile diff chg"
-	quietly  egen na_abpdiff = rowtotal( np_abdiff_85_wo np_abdiff_90_wo np_abdiff_95_wo)
+	egen na_abpdiff = rowtotal( np_abdiff_85_wo np_abdiff_90_wo np_abdiff_95_wo)
+	replace na_abpdiff= 0 if na_abpdiff == .
 	roctab ADMN_NICU na_abpdiff, detail table graph plotopts(title("Total Charge is at or Greater" "than 85th, 90th, 95th"  "%ile of Hosp.-Quarter Mean") graphregion(color(white)) note("Excluding Automatically Admitted Patients") )
 	graph save "`data_p'graphs/admit_alg/senspec_pctile_charge_naa.gph", replace
 	graph export "`data_p'graphs/admit_alg/senspec_pctile_charge_naa.png", replace
@@ -388,7 +415,8 @@ log using "`data_p'log files/admit_algo.smcl", replace
 // "Predictions when  patient charge is greater than 85th 90th and 95th %-iles of the facility-quarter specific mean"
 // "Does not add automatic admits"
 // "Cutpoints: 0 -> <85th%ile diff charge, 1 -> 85th-89th%ile diff chg, 2 -> 90th-94th%ile diff chg, 3 -> >95th%ile diff chg"
-	quietly egen na_pctdiffpred = rowtotal(np_ptcdiff_85_wo np_ptcdiff_90_wo np_ptcdiff_95_wo)
+	egen na_pctdiffpred = rowtotal(np_ptcdiff_85_wo np_ptcdiff_90_wo np_ptcdiff_95_wo)
+	replace na_pctdiffpred = 0 if na_pctdiffpred == .
 	roctab ADMN_NICU na_pctdiffpred, detail table graph plotopts(title("Patient Charge - Fac-Quart."  "Mean is at or Greater" "than 85th, 90th, 95th %ile of Patient"  "Charge - Hospital-Quarter Mean") graphregion(color(white)) note("Excluding Automatically Admitted Patients") )
 	graph save "`data_p'graphs/admit_alg/senspec_pcdiff_charge_naa.gph", replace
 	graph export "`data_p'graphs/admit_alg/senspec_pcdiff_charge_naa.png", replace
